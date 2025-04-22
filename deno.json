@@ -1,0 +1,13 @@
+{
+  "name": "@creit-tech/stellar-router-sdk",
+  "version": "0.1.0",
+  "license": "MIT",
+  "exports": "./src/mod.ts",
+  "fmt": {
+    "lineWidth": 120
+  },
+  "imports": {
+    "@std/assert": "jsr:@std/assert@1",
+    "@stellar/stellar-sdk": "npm:@stellar/stellar-sdk@^13.2.0"
+  }
+}
