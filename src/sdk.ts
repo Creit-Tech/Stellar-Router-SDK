@@ -37,13 +37,13 @@ export class StellarRouterSdk {
     );
   }
 
-  async simResult<T>(invocations: Invocation[]): Promise<T> {
+  async simResult<T>(invocations: Invocation[], opts?: { source?: string }): Promise<T> {
     if (!this.params?.rpcUrl) {
       throw new Error("No `rpcUrl` parameter was provided to the SDK.");
     }
 
     const tx: Transaction = new TransactionBuilder(
-      new Account(SIMULATION_ACCOUNT, "0"),
+      new Account(opts?.source || SIMULATION_ACCOUNT, "0"),
       { networkPassphrase: Networks.PUBLIC, fee: "0" },
     ).setTimeout(0)
       .addOperation(this.exec(SIMULATION_ACCOUNT, invocations))
