@@ -16,13 +16,24 @@ npx jsr add @creit-tech/stellar-assets-sdk
 
 You can check more installation methods (deno, pnpm, etc) from [here](https://jsr.io/@creit-tech/stellar-router-sdk/)
 
+## Choose your contract to use
+
+The first thing to take in consideration is the nature of these "Meta Contracts": they are simple immutable contracts,
+so every time we add new features they will be in a separated contract. This allows you to use the one that fits your
+use case and if for example the only thing you need to do is making an atomic call then using the V0 is the best choice.
+
+If you want to use the contract V0 then you will use the `InvocationV0` class, while if you want to use the V1 then you
+will use the `InvocationV1`. You can check the current versions available and what they do
+[here](https://github.com/Creit-Tech/Stellar-Router-Contract).
+
 ## How to use
 
-Because the library it's pretty simple, using is also simple. Here is an example of us fetching a list of 19 balances
-from different contracts calls at once.
+Because the library it's pretty simple, using it is also simple. Here is an example of us fetching a list of 19 balances
+from different contracts calls at once (BUT, if you need to fetch balances like this, we suggest you using our
+[Stellar Assets SDK](https://jsr.io/@creit-tech/stellar-assets-sdk) because it takes more stuff in consideration).
 
 ```typescript
-import { StellarRouterSdk } from "@creit-tech/stellar-router-sdk";
+import { InvocationV0, StellarRouterSdk } from "@creit-tech/stellar-router-sdk";
 
 const assets: string[] = [
   "CAUIKL3IYGMERDRUN6YSCLWVAKIFG5Q4YJHUKM4S4NJZQIA3BAS6OJPK",
@@ -48,11 +59,13 @@ const assets: string[] = [
 
 const sdk: StellarRouterSdk = new StellarRouterSdk({ rpcUrl: "https://mainnet.sorobanrpc.com" });
 const xbullSwapContract: string = "CB3JAPDEIMA3OOSALUHLYRGM2QTXGVD3EASALPFMVEU2POLLULJBT2XN";
-const invocations: Invocation[] = assets.map((contract: string): Invocation => ({
-  contract,
-  method: "balance",
-  args: [new Address(xbullSwapContract).toScVal()],
-}));
+const invocations: InvocationV0[] = assets.map((contract: string): InvocationV0 =>
+  new InvocationV0({
+    contract,
+    method: "balance",
+    args: [new Address(xbullSwapContract).toScVal()],
+  })
+);
 
 const balances: bigint[] = await sdk.simResult(invocations);
 ```
@@ -63,7 +76,7 @@ directly supporting it).
 
 ```typescript
 import { SorobanDomainsSDK } from "@creit-tech/sorobandomains-sdk";
-import { StellarRouterSdk } from "@creit-tech/stellar-router-sdk";
+import { InvocationV0, StellarRouterSdk } from "@creit-tech/stellar-router-sdk";
 import { xdr } from "@stellar/stellar-sdk";
 
 const routerSdk = new StellarRouterSdk();
@@ -76,21 +89,26 @@ const { value } = await domainsSdk.searchDomain({ domain });
 
 const contractCall: xdr.Operation<Operation.InvokeHostFunction> = routerSdk.exec(
   domainOwner,
-  [{
-    contract: domainsContract,
-    method: "burn_record",
-    args: [xdr.ScVal.scvVec([xdr.ScVal.scvSymbol("Record"), xdr.ScVal.scvBytes(new TextEncoder().encode(value.node))])],
-  }, {
-    contract: domainsContract,
-    method: "set_record",
-    args: [
-      nativeToScVal(new TextEncoder().encode(domain), { type: "bytes" }),
-      nativeToScVal(new TextEncoder().encode("xlm"), { type: "bytes" }),
-      nativeToScVal(value.address, { type: "address" }),
-      nativeToScVal(value.address, { type: "address" }),
-      nativeToScVal(3600n * 24n * 365n * 5n, { type: "u64" }),
-    ],
-  }],
+  [
+    new InvocationV0({
+      contract: domainsContract,
+      method: "burn_record",
+      args: [
+        xdr.ScVal.scvVec([xdr.ScVal.scvSymbol("Record"), xdr.ScVal.scvBytes(new TextEncoder().encode(value.node))]),
+      ],
+    }),
+    new InvocationV0({
+      contract: domainsContract,
+      method: "set_record",
+      args: [
+        nativeToScVal(new TextEncoder().encode(domain), { type: "bytes" }),
+        nativeToScVal(new TextEncoder().encode("xlm"), { type: "bytes" }),
+        nativeToScVal(value.address, { type: "address" }),
+        nativeToScVal(value.address, { type: "address" }),
+        nativeToScVal(3600n * 24n * 365n * 5n, { type: "u64" }),
+      ],
+    }),
+  ],
 );
 
 // Now you build the transaction, add the operation from above and send it to the network.

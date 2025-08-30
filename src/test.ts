@@ -1,6 +1,6 @@
 import { Address } from "@stellar/stellar-sdk";
 import { StellarRouterSdk } from "./sdk.ts";
-import type { Invocation } from "./types.ts";
+import { InvocationV0 } from "./types.ts";
 import { assertEquals } from "@std/assert";
 
 Deno.test("Test fetch balances from the xBull Swap assets list", async () => {
@@ -26,13 +26,15 @@ Deno.test("Test fetch balances from the xBull Swap assets list", async () => {
     "CBZVSNVB55ANF24QVJL2K5QCLOAB6XITGTGXYEAF6NPTXYKEJUYQOHFC",
   ];
 
-  const sdk: StellarRouterSdk = new StellarRouterSdk({ rpcUrl: "https://mainnet.sorobanrpc.com" });
+  const sdk: StellarRouterSdk = new StellarRouterSdk({ rpcUrl: "https://soroban-rpc.creit.tech" });
   const xbullSwapContract: string = "CB3JAPDEIMA3OOSALUHLYRGM2QTXGVD3EASALPFMVEU2POLLULJBT2XN";
-  const invocations: Invocation[] = assets.map((contract: string): Invocation => ({
-    contract,
-    method: "balance",
-    args: [new Address(xbullSwapContract).toScVal()],
-  }));
+  const invocations: InvocationV0[] = assets.map((contract: string): InvocationV0 =>
+    new InvocationV0({
+      contract,
+      method: "balance",
+      args: [new Address(xbullSwapContract).toScVal()],
+    })
+  );
 
   const balances: bigint[] = await sdk.simResult(invocations);
 
